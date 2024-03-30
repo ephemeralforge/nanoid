@@ -73,3 +73,10 @@ func Parse[T any](id T, options ...func(*Option) *Option) (NanoID, error) {
 func ParseFromString(id string, options ...func(*Option) *Option) (NanoID, error) {
 	return NanoID{}, nil
 }
+
+func Must(id NanoID, err error) NanoID {
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
