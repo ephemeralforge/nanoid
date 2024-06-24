@@ -8,7 +8,7 @@ import (
 
 type NanoID []rune
 
-func New(options ...func(*Option) *Option) (*NanoID, error) {
+func New(options ...func(*Option) *Option) (NanoID, error) {
 	opt := new(Option)
 	for _, o := range options {
 		o(opt)

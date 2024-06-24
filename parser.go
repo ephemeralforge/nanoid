@@ -1,3 +1,4 @@
+package nanoid
 
 func Parse[T any](id T, options ...func(*Option) *Option) (NanoID, error) {
 	return NanoID{}, nil
