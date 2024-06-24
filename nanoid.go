@@ -8,7 +8,7 @@ import (
 
 type NanoID []rune
 
-func New(options ...func(*Option) *Option) (NanoID, error) {
+func New(options ...func(*Option) *Option) (*NanoID, error) {
 	opt := new(Option)
 	for _, o := range options {
 		o(opt)
@@ -64,19 +64,4 @@ func (n *NanoID) String() string {
 		return "<nil>"
 	}
 	return string(*n)
-}
-
-func Parse[T any](id T, options ...func(*Option) *Option) (NanoID, error) {
-	return NanoID{}, nil
-}
-
-func ParseFromString(id string, options ...func(*Option) *Option) (NanoID, error) {
-	return NanoID{}, nil
-}
-
-func Must(id NanoID, err error) NanoID {
-	if err != nil {
-		panic(err)
-	}
-	return id
 }
