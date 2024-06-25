@@ -2,7 +2,7 @@ package nanoid
 
 const CanonicNanoIDLenght = 21
 
-var CanonicAlphabet Alphabet = []rune{
+var CanonicNanoIDAlphabet Alphabet = []rune{
 	'A', 'B', 'C', 'D', 'E',
 	'F', 'G', 'H', 'I', 'J',
 	'K', 'L', 'M', 'N', 'O',

@@ -16,7 +16,7 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	switch len(options) {
 	case 0:
 		opt.length = CanonicNanoIDLenght
-		opt.alphabet = CanonicAlphabet
+		opt.alphabet = CanonicNanoIDAlphabet
 	default:
 		for _, o := range options {
 			o(opt)
@@ -38,7 +38,7 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	alphabetUpperBound := uint32(alphabetLen) - 1
 	clz := bits.LeadingZeros32(alphabetUpperBound | 1)
 	mask := (2 << (31 - clz)) - 1
-
+	// TODO: lurk for another approach
 	// Though, the bitmask solution is not perfect since the bytes exceeding
 	// the alphabet size are refused. Therefore, to reliably generate the ID,
 	// the random bytes redundancy has to be satisfied.
