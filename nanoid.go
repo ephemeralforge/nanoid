@@ -9,21 +9,24 @@ import (
 
 type NanoID []rune
 
+// TODO: optimaze buffers
+// New NanoID with options or canonnic by default
 func New(options ...func(*Option) *Option) (NanoID, error) {
 	opt := new(Option)
-	for _, o := range options {
-		o(opt)
-	}
-	// TODO: change defaults injection and validations
-	if opt.length < 2 || opt.length > 255 {
+	switch len(options) {
+	case 0:
 		opt.length = CanonicNanoIDLenght
-	}
-
-	if opt.alphabet == nil {
 		opt.alphabet = CanonicAlphabet
+	default:
+		for _, o := range options {
+			o(opt)
+		}
 	}
 
-	alphabetLen := len(opt.alphabet)
+	if opt.length < 2 || opt.length > 255 {
+		return nil, ErrInvalidIDLength
+	}
+
 	// Runes to support unicode.
 	runes := opt.alphabet
 
@@ -31,6 +34,7 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	// values closer to the alphabet size. The bitmask calculates the closest
 	// `2^31 - 1` number, which exceeds the alphabet size.
 	// For example, the bitmask for the alphabet size 30 is 31 (00011111).
+	alphabetLen := len(opt.alphabet)
 	alphabetUpperBound := uint32(alphabetLen) - 1
 	clz := bits.LeadingZeros32(alphabetUpperBound | 1)
 	mask := (2 << (31 - clz)) - 1
@@ -48,32 +52,32 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	// alphabet size, and magic number 1.6 (using 1.6 peaks at performance
 	// according to benchmarks).
 	//TODO: add readability to this step
-	step := int(math.Ceil(1.6 * float64(mask*opt.length) / float64(alphabetLen)))
+	stepFormula := 1.6 * float64(mask*opt.length) / float64(alphabetLen)
+	step := int(math.Ceil(stepFormula))
 
-	randBytes := make([]byte, step)
+	b := make([]byte, step)
 	id := make([]rune, opt.length)
 
 	// TODO: make this a function to avoid return with tag
-	currentRuneToGeneratePos, randomAlphabetPos := 0, 0
+	currentRune, currentAlphabetPosition := 0, 0
 Outer:
 	for {
-		_, err := rand.Read(randBytes)
-		if err != nil {
-			return nil, fmt.Errorf("nanoid: %s caused by (%w)", err.Error(), ErrInvalidByte)
+
+		if _, err := rand.Read(b); err != nil {
+			return nil, fmt.Errorf("nanoid: %s caused by (%w)", err.Error(), ErrInvalidBufferRead)
 		}
 
 		for i := 0; i < step; i++ {
-			randomAlphabetPos = int(randBytes[i]) & mask
+			currentAlphabetPosition = int(b[i]) & mask
 
-			if randomAlphabetPos >= alphabetLen {
+			if currentAlphabetPosition >= alphabetLen {
 				continue
 			}
 
-			id[currentRuneToGeneratePos] = runes[randomAlphabetPos]
+			id[currentRune] = runes[currentAlphabetPosition]
+			currentRune++
 
-			currentRuneToGeneratePos++
-
-			if currentRuneToGeneratePos == opt.length {
+			if currentRune == opt.length {
 				break Outer
 			}
 		}
