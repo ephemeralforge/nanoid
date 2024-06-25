@@ -27,6 +27,10 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 		return nil, ErrInvalidIDLength
 	}
 
+	if opt.alphabet == nil {
+		return nil, ErrNilAlphabet
+	}
+
 	// Runes to support unicode.
 	runes := opt.alphabet
 
