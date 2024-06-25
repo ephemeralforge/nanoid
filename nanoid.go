@@ -9,7 +9,7 @@ import (
 
 type NanoID []rune
 
-// TODO: optimaze buffers
+// TODO: buffers optimization
 // New NanoID with options or canonnic by default
 func New(options ...func(*Option) *Option) (NanoID, error) {
 	opt := new(Option)
@@ -51,7 +51,6 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	// The number of random bytes gets decided upon the ID size, mask,
 	// alphabet size, and magic number 1.6 (using 1.6 peaks at performance
 	// according to benchmarks).
-	//TODO: add readability to this step
 	stepFormula := 1.6 * float64(mask*opt.length) / float64(alphabetLen)
 	step := int(math.Ceil(stepFormula))
 
