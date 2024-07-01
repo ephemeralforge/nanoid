@@ -1,9 +1,9 @@
 package nanoid
 
-func Parse[T any](id T, options ...func(*Option) *Option) (NanoID, error) {
+func Parse[T any](_ T, _ ...func(*Option) *Option) (NanoID, error) {
 	return NanoID{}, nil
 }
 
-func ParseFromString(id string, options ...func(*Option) *Option) (NanoID, error) {
+func ParseFromString(_ string, _ ...func(*Option) *Option) (NanoID, error) {
 	return NanoID{}, nil
 }

@@ -10,13 +10,14 @@ import (
 type NanoID []rune
 
 // TODO: buffers optimization
-// New NanoID with options or canonnic by default
+// New NanoID with options or canonnic by default.
 func New(options ...func(*Option) *Option) (NanoID, error) {
 	opt := new(Option)
+
 	switch len(options) {
 	case 0:
 		opt.length = CanonicNanoIDLenght
-		opt.alphabet = CanonicNanoIDAlphabet
+		opt.alphabet = AlphabetFromString(CanonicNanoIDAlphabet)
 	default:
 		for _, o := range options {
 			o(opt)
@@ -36,12 +37,13 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 
 	// First, a bitmask is necessary to generate the ID. The bitmask makes bytes
 	// values closer to the alphabet size. The bitmask calculates the closest
-	// `2^31 - 1` number, which exceeds the alphabet size.
-	// For example, the bitmask for the alphabet size 30 is 31 (00011111).
+
 	alphabetLen := len(opt.alphabet)
 	alphabetUpperBound := uint32(alphabetLen) - 1
 	clz := bits.LeadingZeros32(alphabetUpperBound | 1)
-	mask := (2 << (31 - clz)) - 1
+	mask := (2 << (31 - clz)) - 1 //nolint:mnd // `2^31 - 1` number, which exceeds the alphabet size
+	// For example, the bitmask for the alphabet size 30 is 31 (00011111).
+
 	// TODO: lurk for another approach
 	// Though, the bitmask solution is not perfect since the bytes exceeding
 	// the alphabet size are refused. Therefore, to reliably generate the ID,
@@ -53,8 +55,9 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 
 	// Next, a step determines how many random bytes to generate.
 	// The number of random bytes gets decided upon the ID size, mask,
-	// alphabet size, and magic number 1.6 (using 1.6 peaks at performance
-	// according to benchmarks).
+	// alphabet size, and magic number 1.6.
+
+	//nolint:mnd // using 1.6 peaks at performance according to benchmarks
 	stepFormula := 1.6 * float64(mask*opt.length) / float64(alphabetLen)
 	step := int(math.Ceil(stepFormula))
 
@@ -62,10 +65,11 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	id := make([]rune, opt.length)
 
 	// TODO: make this a function to avoid return with tag
-	currentRune, currentAlphabetPosition := 0, 0
+	currentRune := 0
+	var currentAlphabetPosition int
+
 Outer:
 	for {
-
 		if _, err := rand.Read(b); err != nil {
 			return nil, fmt.Errorf("nanoid: %s caused by (%w)", err.Error(), ErrInvalidBufferRead)
 		}
