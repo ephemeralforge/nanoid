@@ -1,8 +1,6 @@
 package nanoid
 
 import (
-	"crypto/rand"
-	"fmt"
 	"math"
 	"math/bits"
 )
@@ -18,6 +16,7 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	case 0:
 		opt.length = CanonicNanoIDLenght
 		opt.alphabet = AlphabetFromString(CanonicNanoIDAlphabet)
+		opt.randomFunc = CanonicNanoIDRandomFunc
 	default:
 		for _, o := range options {
 			o(opt)
@@ -31,9 +30,6 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	if opt.alphabet == nil {
 		return nil, ErrNilAlphabet
 	}
-
-	// Runes to support unicode.
-	runes := opt.alphabet
 
 	// First, a bitmask is necessary to generate the ID. The bitmask makes bytes
 	// values closer to the alphabet size. The bitmask calculates the closest
@@ -61,36 +57,12 @@ func New(options ...func(*Option) *Option) (NanoID, error) {
 	stepFormula := 1.6 * float64(mask*opt.length) / float64(alphabetLen)
 	step := int(math.Ceil(stepFormula))
 
-	b := make([]byte, step)
-	id := make([]rune, opt.length)
-
-	// TODO: make this a function to avoid return with tag
-	currentRune := 0
-	var currentAlphabetPosition int
-
-Outer:
-	for {
-		if _, err := rand.Read(b); err != nil {
-			return nil, fmt.Errorf("nanoid: %s caused by (%w)", err.Error(), ErrInvalidBufferRead)
-		}
-
-		for i := 0; i < step; i++ {
-			currentAlphabetPosition = int(b[i]) & mask
-
-			if currentAlphabetPosition >= alphabetLen {
-				continue
-			}
-
-			id[currentRune] = runes[currentAlphabetPosition]
-			currentRune++
-
-			if currentRune == opt.length {
-				break Outer
-			}
-		}
-	}
-
-	return NanoID(id), nil
+	return generate(&generateInput{
+		Option:      opt,
+		alphabetLen: alphabetLen,
+		mask:        mask,
+		step:        step,
+	})
 }
 
 func (n NanoID) String() string {
@@ -98,4 +70,40 @@ func (n NanoID) String() string {
 		return "<nil>"
 	}
 	return string(n)
+}
+
+type generateInput struct {
+	*Option
+	alphabetLen int
+	mask        int
+	step        int
+}
+
+func generate(opt *generateInput) (NanoID, error) {
+	b := make([]byte, opt.step)
+	id := make([]rune, opt.Option.length)
+
+	currentRune := 0
+	var currentAlphabetPosition int
+
+	for {
+		if err := opt.randomFunc(b); err != nil {
+			return nil, err
+		}
+
+		for i := 0; i < opt.step; i++ {
+			currentAlphabetPosition = int(b[i]) & opt.mask
+
+			if currentAlphabetPosition >= opt.alphabetLen {
+				continue
+			}
+
+			id[currentRune] = opt.alphabet[currentAlphabetPosition]
+			currentRune++
+
+			if currentRune == opt.Option.length {
+				return NanoID(id), nil
+			}
+		}
+	}
 }
